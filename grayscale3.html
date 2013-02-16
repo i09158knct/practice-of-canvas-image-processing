@@ -31,9 +31,9 @@
           i;
 
         var
-          rCoefficient = Math.round(0.29812  * 1024),
-          gCoefficient = Math.round(0.586611 * 1024),
-          bCoefficient = Math.round(0.114478 * 1024);
+          rFactor = Math.round(0.29812  * 1024),
+          gFactor = Math.round(0.586611 * 1024),
+          bFactor = Math.round(0.114478 * 1024);
 
         context.drawImage(image, 0, 0, 128, 128);
 
@@ -46,9 +46,9 @@
           aIndex = i + 3;
 
           ntscAverage = (
-            rCoefficient * data[rIndex] +
-            gCoefficient * data[gIndex] +
-            bCoefficient * data[bIndex]
+            rFactor * data[rIndex] +
+            gFactor * data[gIndex] +
+            bFactor * data[bIndex]
           ) >> 10;
 
           data[rIndex] = ntscAverage;
