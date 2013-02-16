@@ -6,7 +6,7 @@
 <body>
   <canvas id="canvas"></canvas>
   <br>
-  <input id="area-size" type="range" min="1" max="15" step="2" value="0">
+  <input id="radius" type="range" min="1" max="8" step="1" value="1">
 
   <script src="js/utils.js"></script>
   <script>
@@ -27,20 +27,19 @@
         var data = imageData.data;
         var initialData = new Uint8ClampedArray(imageData.data);
         var negaData = buildNegativeData(data);
-        var elAreaSize = document.getElementById("area-size");
+        var elRadius = document.getElementById("radius");
 
-        elAreaSize.onchange = function() {
-          var areaSize = +elAreaSize.value;
-          var halfOfAreaSize = Math.round(areaSize / 2);
-          var pixelValueAcc = []
+        elRadius.onchange = function() {
+          var radius = +elRadius.value;
+          var pixelValueAcc = new Uint16Array(4);
           for (var i = 0; i < length; i += 4) {
             var count = 0;
             pixelValueAcc[0] = 0;
             pixelValueAcc[1] = 0;
             pixelValueAcc[2] = 0;
             pixelValueAcc[3] = 0;
-            for (var iy = -halfOfAreaSize; iy < halfOfAreaSize; iy++) {
-              for (var ix = -halfOfAreaSize; ix < halfOfAreaSize; ix++) {
+            for (var iy = -radius; iy < radius; iy++) {
+              for (var ix = -radius; ix < radius; ix++) {
                 var targetIndex = i + 4 * (ix + width * iy);
                 var rIndex = targetIndex + 0;
                 var gIndex = targetIndex + 1;
