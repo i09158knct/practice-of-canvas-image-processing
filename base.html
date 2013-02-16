@@ -8,8 +8,6 @@
 
   <hr>
 
-  <script src="js/lib/jquery-1.9.1.js"></script>
-  <script src="js/lib/canvasquery.js"></script>
   <script src="js/utils.js"></script>
   <script>
     var
@@ -17,17 +15,16 @@
       context,
       image;
 
-    jQuery(function _main($) {
+    window.onload = function() {
       canvas = document.getElementById("canvas");
       context = canvas.getContext("2d");
 
       image = new Image();
-      // image.src = "http://www.google.co.jp/images/srpr/logo3w.png"
       image.src = "img/target.jpg"
       image.onload = function() {
         context.drawImage(image, 0, 0, 128, 128);
       };
-    });
+    };
 
   </script>
 </body>
