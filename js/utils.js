@@ -1,4 +1,5 @@
-// need --disable-web-security option
+// if source image data is coming from different origin,
+// should set --disable-web-security option when start Chrome
 function showImage(canvas) {
   var img = new Image();
   img.src = canvas.toDataURL();
@@ -34,6 +35,3 @@ function dataToNeagative(data) {
     data[bIndex] = 255 - data[bIndex];
   }
 }
-
-
-// from source data
