@@ -2,33 +2,35 @@
 <html>
 <head>
   <title>Canvas Test</title>
+  <style>
+    iframe {
+      display: block;
+      width: 512px;
+      height: 256px;
+    }
+  </style>
 </head>
 <body>
-  <canvas id="canvas"></canvas>
-
-  <hr>
-
-  <script src="js/lib/jquery-1.9.1.js"></script>
-  <script src="js/lib/canvasquery.js"></script>
-  <script src="js/utils.js"></script>
+  <iframe src="base.html"></iframe>
+  <iframe src="grayscale1.html"></iframe>
+  <iframe src="grayscale2.html"></iframe>
+  <iframe src="grayscale3.html"></iframe>
+  <iframe src="binarization.html"></iframe>
+  <iframe src="negative.html"></iframe>
+  <iframe src="emboss.html"></iframe>
+  <iframe src="blur1.html"></iframe>
   <script>
-    var
-      canvas,
-      context,
-      image;
-
-    jQuery(function _main($) {
-      canvas = document.getElementById("canvas");
-      context = canvas.getContext("2d");
-
-      image = new Image();
-      // image.src = "http://www.google.co.jp/images/srpr/logo3w.png"
-      image.src = "img/target.jpg"
-      image.onload = function() {
-        context.drawImage(image, 0, 0, 128, 128);
-      };
-    });
-
+    window.onload = function() {
+      var iframes = document.getElementsByTagName("iframe");
+      for (var i = 0; i < iframes.length; i++) {
+        var link = document.createElement("a");
+        link.href = iframes[i].src;
+        link.innerText = iframes[i].src;
+        var h3 = document.createElement("h3");
+        h3.innerHTML = link.outerHTML;
+        iframes[i].parentElement.insertBefore(h3, iframes[i]);
+      }
+    }
   </script>
 </body>
 </html>
