@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Canvas Test</title>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <hr>
+
+  <script src="js/utils.js"></script>
+  <script>
+    var
+      canvas,
+      context,
+      image,
+      imageData;
+
+    window.onload = function _main() {
+      canvas = document.getElementById("canvas");
+      context = canvas.getContext("2d");
+
+      image = new Image();
+      image.src = "img/target.jpg"
+      image.onload = function() {
+        var
+          data,
+          rIndex,
+          gIndex,
+          bIndex,
+          aIndex,
+          ntscAverage,
+          i;
+
+        var
+          rCoefficient = Math.round(0.29812  * 1024),
+          gCoefficient = Math.round(0.586611 * 1024),
+          bCoefficient = Math.round(0.114478 * 1024);
+
+        context.drawImage(image, 0, 0, 128, 128);
+
+        imageData = context.getImageData(0, 0, 128, 128);
+        data = imageData.data;
+        for (i = 0; i < 65536; i += 4) {
+          rIndex = i + 0;
+          gIndex = i + 1;
+          bIndex = i + 2;
+          aIndex = i + 3;
+
+          ntscAverage = (
+            rCoefficient * data[rIndex] +
+            gCoefficient * data[gIndex] +
+            bCoefficient * data[bIndex]
+          ) >> 10;
+
+          data[rIndex] = ntscAverage;
+          data[gIndex] = ntscAverage;
+          data[bIndex] = ntscAverage;
+        }
+
+        context.putImageData(imageData, 0, 0);
+      };
+    };
+
+  </script>
+</body>
+</html>

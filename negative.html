@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Canvas Test</title>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <hr>
+
+  <script src="js/utils.js"></script>
+  <script>
+    window.onload = function _main() {
+      var canvas = document.getElementById("canvas");
+      var context = canvas.getContext("2d");
+
+      var image = new Image();
+      image.src = "img/target.jpg"
+      image.onload = function() {
+        context.drawImage(image, 0, 0, 128, 128);
+
+        var imageData = context.getImageData(0, 0, 128, 128);
+        var initialData = new Uint8ClampedArray(imageData.data);
+
+        var data = imageData.data;
+        for (var i = 0; i < 65536; i += 4) {
+          var rIndex = i + 0;
+          var gIndex = i + 1;
+          var bIndex = i + 2;
+          var aIndex = i + 3;
+
+          data[rIndex] = 255 - initialData[rIndex];
+          data[gIndex] = 255 - initialData[gIndex];
+          data[bIndex] = 255 - initialData[bIndex];
+        }
+
+        context.putImageData(imageData, 0, 0);
+      };
+    };
+
+  </script>
+</body>
+</html>

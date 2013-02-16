@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Canvas Test</title>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <br>
+  <input id="area-size" type="range" min="1" max="15" step="2" value="0">
+
+  <hr>
+
+  <script src="js/utils.js"></script>
+  <script>
+    window.onload = function _main() {
+      var width = 128;
+      var heigth = 128;
+      var length = 4 * width * heigth;
+
+      var canvas = document.getElementById("canvas");
+      var context = canvas.getContext("2d");
+
+      var image = new Image();
+      image.src = "img/target.jpg"
+      image.onload = function() {
+        context.drawImage(image, 0, 0, width, heigth);
+
+        var imageData = context.getImageData(0, 0, width, heigth);
+        var data = imageData.data;
+        var initialData = new Uint8ClampedArray(imageData.data);
+        var negaData = buildNegativeData(data);
+        var elAreaSize = document.getElementById("area-size");
+
+        elAreaSize.onchange = function() {
+          var areaSize = +elAreaSize.value;
+          var halfOfAreaSize = Math.round(areaSize / 2);
+          var pixelValueAcc = []
+          for (var i = 0; i < length; i += 4) {
+            var count = 0;
+            pixelValueAcc[0] = 0;
+            pixelValueAcc[1] = 0;
+            pixelValueAcc[2] = 0;
+            pixelValueAcc[3] = 0;
+            for (var iy = -halfOfAreaSize; iy < halfOfAreaSize; iy++) {
+              for (var ix = -halfOfAreaSize; ix < halfOfAreaSize; ix++) {
+                var targetIndex = i + 4 * (ix + width * iy);
+                var rIndex = targetIndex + 0;
+                var gIndex = targetIndex + 1;
+                var bIndex = targetIndex + 2;
+                var aIndex = targetIndex + 3;
+                if (typeof initialData[rIndex] !== "undefined") {
+                  count++;
+                  pixelValueAcc[0] += initialData[rIndex];
+                  pixelValueAcc[1] += initialData[gIndex];
+                  pixelValueAcc[2] += initialData[bIndex];
+                  pixelValueAcc[3] += initialData[aIndex];
+                }
+              }
+            }
+
+            var rIndex = i + 0;
+            var gIndex = i + 1;
+            var bIndex = i + 2;
+            var aIndex = i + 3;
+
+            data[rIndex] = pixelValueAcc[0] / count;
+            data[gIndex] = pixelValueAcc[1] / count;
+            data[bIndex] = pixelValueAcc[2] / count;
+            data[aIndex] = pixelValueAcc[3] / count;
+          }
+
+          context.putImageData(imageData, 0, 0);
+        };
+      };
+    };
+
+  </script>
+</body>
+</html>

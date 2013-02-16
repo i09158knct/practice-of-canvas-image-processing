@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Canvas Test</title>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <br>
+  <input id="xDiff" type="range" min="-127" max="127" value="0">
+  <br>
+  <input id="yDiff" type="range" min="-127" max="127" value="0">
+
+  <hr>
+
+  <script src="js/utils.js"></script>
+  <script>
+    window.onload = function _main() {
+      var width = 128;
+      var heigth = 128;
+      var length = 4 * width * heigth;
+
+      var canvas = document.getElementById("canvas");
+      var context = canvas.getContext("2d");
+
+      var image = new Image();
+      image.src = "img/target.jpg"
+      image.onload = function() {
+        context.drawImage(image, 0, 0, width, heigth);
+
+        var imageData = context.getImageData(0, 0, width, heigth);
+        var data = imageData.data;
+        var initialData = new Uint8ClampedArray(imageData.data);
+        var negaData = buildNegativeData(data);
+        var elXDiff = document.getElementById("xDiff");
+        var elYDiff = document.getElementById("yDiff");
+
+        elXDiff.onchange = elYDiff.onchange = function() {
+          var xDiff = +elXDiff.value;
+          var yDiff = +elYDiff.value;
+          var negaOffset = 4 * (xDiff + width * yDiff);
+
+          for (var i = 0; i < length; i += 4) {
+            var rIndex = i + 0;
+            var gIndex = i + 1;
+            var bIndex = i + 2;
+            var aIndex = i + 3;
+
+            var rPosi = initialData[rIndex];
+            var gPosi = initialData[gIndex];
+            var bPosi = initialData[bIndex];
+
+            var rNega = negaData[rIndex + negaOffset];
+            var gNega = negaData[gIndex + negaOffset];
+            var bNega = negaData[bIndex + negaOffset];
+
+            if (typeof rNega === "undefined") {
+              rNega = rPosi;
+              gNega = gPosi;
+              bNega = bPosi;
+            }
+
+            data[rIndex] = rPosi + rNega - 128;
+            data[gIndex] = gPosi + gNega - 128;
+            data[bIndex] = bPosi + bNega - 128;
+          }
+
+          context.putImageData(imageData, 0, 0);
+        };
+      };
+    };
+
+  </script>
+</body>
+</html>
