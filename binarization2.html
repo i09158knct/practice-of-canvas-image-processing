@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Canvas Test</title>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <br>
+  <input id="lower-threshold" type="range" min="0" max="255" value="0">
+  <br>
+  <input id="upper-threshold" type="range" min="0" max="255" value="255">
+
+  <script src="js/utils.js"></script>
+  <script>
+    window.onload = function _main() {
+      var canvas = document.getElementById("canvas");
+      var context = canvas.getContext("2d");
+
+      var image = new Image();
+      image.src = "img/target.jpg"
+      image.onload = function() {
+        context.drawImage(image, 0, 0, 128, 128);
+
+        var imageData = context.getImageData(0, 0, 128, 128);
+        var initialData = new Uint8ClampedArray(imageData.data);
+        var elLowerThreshold = document.getElementById("lower-threshold");
+        var elUpperThreshold = document.getElementById("upper-threshold");
+
+        elLowerThreshold.onchange = elUpperThreshold.onchange = function() {
+          var lowerThreshold = +elLowerThreshold.value;
+          var upperThreshold = +elUpperThreshold.value;
+          var data = imageData.data;
+          for (var i = 0; i < 65536; i += 4) {
+            var rIndex = i + 0;
+            var gIndex = i + 1;
+            var bIndex = i + 2;
+            var aIndex = i + 3;
+
+            var ntscAverage = (
+              305 * initialData[rIndex] +
+              601 * initialData[gIndex] +
+              117 * initialData[bIndex]
+            ) >> 10;
+
+            var pixelValue = 0;
+            if (ntscAverage >= lowerThreshold &&
+                ntscAverage <= upperThreshold) {
+              pixelValue =  255;
+            }
+
+            data[rIndex] = pixelValue;
+            data[gIndex] = pixelValue;
+            data[bIndex] = pixelValue;
+          }
+
+          context.putImageData(imageData, 0, 0);
+        };
+      };
+    };
+
+  </script>
+</body>
+</html>
