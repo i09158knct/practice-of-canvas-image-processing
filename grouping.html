@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Canvas Test</title>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <script src="js/utils.js"></script>
+  <script>
+    window.onload = function _main() {
+      var width = 128;
+      var heigth = 128;
+      var length = 4 * width * heigth;
+
+      var canvas = document.getElementById("canvas");
+      var context = canvas.getContext("2d");
+
+      canvas.width = width;
+      canvas.heigth = heigth;
+      canvas.style.width = width;
+      canvas.style.heigth = heigth;
+
+
+      var image = new Image();
+      image.src = "img/sample.png";
+      image.onload = function() {
+        context.drawImage(image, 0, 0, width, heigth);
+
+        var imageData = context.getImageData(0, 0, width, heigth);
+        var initialData = new Uint8ClampedArray(imageData.data);
+
+        (function _draw(){
+
+          var data = imageData.data;
+          var group = buildGroup(imageData);
+          var groupTable = group.groupTable;
+           groupIdList = group.groupIdList;
+           colorTable = (function _generateColorTable() {
+            var colorTable = [];
+            groupIdList.forEach(function(groupId) {
+              colorTable[groupId] = {
+                r: Math.floor(Math.random() * 256),
+                g: Math.floor(Math.random() * 256),
+                b: Math.floor(Math.random() * 256)
+              };
+            });
+            return colorTable;
+          })();
+
+          for (var iy = 0, offsetY = 0; iy < heigth; iy++, offsetY += 4 * width) {
+            for (var ix = 0, offsetX = 0; ix < width; ix++, offsetX += 4) {
+              var headIndex = offsetY + offsetX;
+              var rIndex = headIndex + 0;
+              var gIndex = headIndex + 1;
+              var bIndex = headIndex + 2;
+              var aIndex = headIndex + 3;
+
+              var groupId = groupTable[iy][ix];
+              var colors = colorTable[groupId] || {};
+
+              data[rIndex] = colors.r || 255;
+              data[gIndex] = colors.g || 255;
+              data[bIndex] = colors.b || 255;
+            }
+          }
+
+          context.putImageData(imageData, 0, 0);
+        })();
+      };
+      image.style.verticalAlign = "top";
+      image.style.marginRight = "32px";
+      document.body.insertBefore(image, canvas);
+    };
+
+  </script>
+</body>
+</html>
