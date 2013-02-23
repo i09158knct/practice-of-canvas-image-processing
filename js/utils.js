@@ -131,6 +131,22 @@ function buildGroup(imageData) {
     for (var i = 1; i < nextMarkId; i++) {
       lookupTable[i] = lookupTable[i] || i;
     }
+
+    (function _normalizeId() {
+      var normalizingMap = [];
+      var nextNewId = 1;
+      for (var i = 0, length = lookupTable.length; i < length; i++) {
+        var targetId = lookupTable[i];
+        if (!targetId) continue;
+
+        var normalizedId =
+          normalizingMap[targetId] ||
+          (normalizingMap[targetId] = nextNewId++);
+
+        lookupTable[i] = normalizedId;
+      }
+    })();
+
     return lookupTable;
   })();
 
@@ -143,28 +159,21 @@ function buildGroup(imageData) {
     }
   })();
 
-  var groupIdList = (function _createGroupIdList() {
-    var uniqueSparseArray = [];
-    var
-      length,
-      id,
-      i;
-    for (i = 0, length = lookupTable.length; i < length; i++) {
-      id = lookupTable[i];
-      if (id) uniqueSparseArray[id] = id;
+  var numberOfGroups = (function countGroups() {
+    var countedIdTable = [];
+    var count = 0;
+    for (var i = 0, length = lookupTable.length; i < length; i++) {
+      var id = lookupTable[i];
+      if (id && !countedIdTable[id]) {
+        countedIdTable[id] = true;
+        count++;
+      }
     }
-
-    var uniqueArray = [];
-    for (i = 0, length = uniqueSparseArray.length; i < length; i++) {
-      id = uniqueSparseArray[i];
-      if (id) uniqueArray.push(id);
-    }
-
-    return uniqueArray;
+    return count;
   })();
 
   return {
     groupTable: groupTable,
-    groupIdList: groupIdList
+    numberOfGroups: numberOfGroups
   };
 }

@@ -35,16 +35,16 @@
           var data = imageData.data;
           var group = buildGroup(imageData);
           var groupTable = group.groupTable;
-           groupIdList = group.groupIdList;
-           colorTable = (function _generateColorTable() {
+          var numberOfGroups = group.numberOfGroups;
+          var colorTable = (function _generateColorTable() {
             var colorTable = [];
-            groupIdList.forEach(function(groupId) {
+            for (var groupId = 1; groupId <= numberOfGroups; groupId++) {
               colorTable[groupId] = {
                 r: Math.floor(Math.random() * 256),
                 g: Math.floor(Math.random() * 256),
                 b: Math.floor(Math.random() * 256)
               };
-            });
+            }
             return colorTable;
           })();
 
