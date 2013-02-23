@@ -177,3 +177,80 @@ function buildGroup(imageData) {
     numberOfGroups: numberOfGroups
   };
 }
+
+function imageDataSplitIntoGroups(imageData, group) {
+  var groupTable = group.groupTable;
+  var numberOfGroups = group.numberOfGroups;
+  var width = imageData.width;
+  var height = imageData.height;
+
+  var positions = (function _measurePositionForEachGroup() {
+    var positions = [];
+    for (var i = 1; i <= numberOfGroups; i++) {
+      positions[i] = {
+        top: Number.MAX_VALUE,
+        bottom: Number.MIN_VALUE,
+        left: Number.MAX_VALUE,
+        right: Number.MIN_VALUE
+      };
+    }
+
+    for (var iy = 0; iy < height; iy++) {
+      var currentRow = groupTable[iy];
+      for (var ix = 0; ix < width; ix++) {
+        var groupId = currentRow[ix];
+        if (!groupId) continue;
+        var position = positions[groupId];
+        if (iy < position.top) {
+          position.top = iy;
+        }
+        if (iy > position.bottom) {
+          position.bottom = iy;
+        }
+
+        if (ix < position.left) {
+          position.left = ix;
+        }
+        if (ix > position.right) {
+          position.right = ix;
+        }
+      }
+    }
+    return positions;
+  })();
+
+  var imageDataBuilder =
+    window.document.createElement("canvas").getContext("2d");
+
+  var containers = positions.map(function _addSizeInfoAndImageData(position) {
+    var width = position.right - position.left + 1;
+    var height = position.bottom - position.top + 1;
+    position.width = width;
+    position.height = height;
+    position.imageData = imageDataBuilder.createImageData(width, height);
+    return position;
+  });
+  positions = null;
+
+  var data = imageData.data;
+  for (var iy = 0, offsetY = 0; iy < height; iy++, offsetY += 4 * width) {
+    var currentRow = groupTable[iy];
+    for (var ix = 0, offsetX = 0; ix < width; ix++, offsetX += 4) {
+      var groupId = currentRow[ix];
+      if (!groupId) continue;
+
+      var container = containers[groupId];
+      var cy = iy - container.top;
+      var cx = ix - container.left;
+      var cheadIndex = 4 * (container.width * cy + cx);
+      var headIndex = offsetY + offsetX;
+      var cdata = container.imageData.data;
+
+      cdata[cheadIndex + 0] = data[headIndex + 0];
+      cdata[cheadIndex + 1] = data[headIndex + 1];
+      cdata[cheadIndex + 2] = data[headIndex + 2];
+      cdata[cheadIndex + 3] = data[headIndex + 3];
+    }
+  }
+  return containers;
+}
