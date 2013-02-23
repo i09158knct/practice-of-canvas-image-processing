@@ -178,7 +178,7 @@ function buildGroup(imageData) {
   };
 }
 
-function imageDataSplitIntoGroups(imageData, group) {
+function splitImageDataIntoGroups(imageData, group) {
   var groupTable = group.groupTable;
   var numberOfGroups = group.numberOfGroups;
   var width = imageData.width;
@@ -253,4 +253,40 @@ function imageDataSplitIntoGroups(imageData, group) {
     }
   }
   return containers;
+}
+
+function colorizeImageDataPerGroup(imageData, group, colorTable) {
+  var data = imageData.data;
+  var groupTable = group.groupTable;
+  var numberOfGroups = group.numberOfGroups;
+  colorTable = colorTable || (function _generateColorTable() {
+    var colorTable = [];
+    for (var groupId = 1; groupId <= numberOfGroups; groupId++) {
+      colorTable[groupId] = {
+        r: Math.floor(Math.random() * 256),
+        g: Math.floor(Math.random() * 256),
+        b: Math.floor(Math.random() * 256)
+      };
+    }
+    return colorTable;
+  })();
+
+  var width = imageData.width;
+  var height = imageData.height;
+  for (var iy = 0, offsetY = 0; iy < height; iy++, offsetY += 4 * width) {
+    for (var ix = 0, offsetX = 0; ix < width; ix++, offsetX += 4) {
+      var headIndex = offsetY + offsetX;
+      var rIndex = headIndex + 0;
+      var gIndex = headIndex + 1;
+      var bIndex = headIndex + 2;
+      var aIndex = headIndex + 3;
+
+      var groupId = groupTable[iy][ix];
+      var colors = colorTable[groupId] || {};
+
+      data[rIndex] = colors.r || 255;
+      data[gIndex] = colors.g || 255;
+      data[bIndex] = colors.b || 255;
+    }
+  }
 }
