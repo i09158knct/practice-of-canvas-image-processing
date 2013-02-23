@@ -22,6 +22,8 @@
       image.src = "img/target.jpg"
       image.onload = function() {
         var
+          width,
+          height,
           data,
           rIndex,
           gIndex,
@@ -35,11 +37,17 @@
           gFactor = Math.round(0.586611 * 1024),
           bFactor = Math.round(0.114478 * 1024);
 
-        context.drawImage(image, 0, 0, 128, 128);
+        width = image.width;
+        height = image.height;
+        canvas.width = width;
+        canvas.height = height;
+        canvas.style.width = width;
+        canvas.style.height = height;
+        context.drawImage(image, 0, 0, width, height);
 
-        imageData = context.getImageData(0, 0, 128, 128);
+        imageData = context.getImageData(0, 0, width, height);
         data = imageData.data;
-        for (i = 0; i < 65536; i += 4) {
+        for (i = 0, length = 4 * width * height; i < length; i += 4) {
           rIndex = i + 0;
           gIndex = i + 1;
           bIndex = i + 2;

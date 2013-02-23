@@ -17,16 +17,22 @@
       var image = new Image();
       image.src = "img/target.jpg"
       image.onload = function() {
-        context.drawImage(image, 0, 0, 128, 128);
+        var width = image.width;
+        var height = image.height;
+        canvas.width = width;
+        canvas.height = height;
+        canvas.style.width = width;
+        canvas.style.height = height;
+        context.drawImage(image, 0, 0, width, height);
 
-        var imageData = context.getImageData(0, 0, 128, 128);
+        var imageData = context.getImageData(0, 0, width, height);
         var initialData = new Uint8ClampedArray(imageData.data);
         var elThreshold = document.getElementById("threshold");
 
         elThreshold.onchange = function() {
           var threshold = +elThreshold.value;
           var data = imageData.data;
-          for (var i = 0; i < 65536; i += 4) {
+          for (var i = 0, length = 4 * width * height; i < length; i += 4) {
             var rIndex = i + 0;
             var gIndex = i + 1;
             var bIndex = i + 2;
