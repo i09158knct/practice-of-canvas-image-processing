@@ -28,8 +28,8 @@
 
         var baseImageData = context.getImageData(0, 0, width, height);
         var group = buildGroup(baseImageData);
-        colorizeImageDataPerGroup(baseImageData, group)
-        context.putImageData(baseImageData, 0, 0)
+        colorizeImageDataPerGroup(baseImageData, group);
+        context.putImageData(baseImageData, 0, 0);
         var splitedImages = splitImageDataIntoGroups(baseImageData, group);
 
         var elSplitedImagesContainer =
