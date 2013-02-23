@@ -12,8 +12,8 @@
   <script>
     window.onload = function _main() {
       var width = 128;
-      var heigth = 128;
-      var length = 4 * width * heigth;
+      var height = 128;
+      var length = 4 * width * height;
 
       var canvas = document.getElementById("canvas");
       var context = canvas.getContext("2d");
@@ -21,9 +21,9 @@
       var image = new Image();
       image.src = "img/target.jpg"
       image.onload = function() {
-        context.drawImage(image, 0, 0, width, heigth);
+        context.drawImage(image, 0, 0, width, height);
 
-        var imageData = context.getImageData(0, 0, width, heigth);
+        var imageData = context.getImageData(0, 0, width, height);
         var data = imageData.data;
         var initialData = new Uint8ClampedArray(imageData.data);
         var negaData = buildNegativeData(data);

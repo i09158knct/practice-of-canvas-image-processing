@@ -10,24 +10,24 @@
   <script>
     window.onload = function _main() {
       var width = 128;
-      var heigth = 128;
-      var length = 4 * width * heigth;
+      var height = 128;
+      var length = 4 * width * height;
 
       var canvas = document.getElementById("canvas");
       var context = canvas.getContext("2d");
 
       canvas.width = width;
-      canvas.heigth = heigth;
+      canvas.height = height;
       canvas.style.width = width;
-      canvas.style.heigth = heigth;
-
+      canvas.style.height = height;
 
       var image = new Image();
       image.src = "img/sample.png";
       image.onload = function() {
-        context.drawImage(image, 0, 0, width, heigth);
 
-        var imageData = context.getImageData(0, 0, width, heigth);
+        context.drawImage(image, 0, 0, width, height);
+
+        var imageData = context.getImageData(0, 0, width, height);
         var initialData = new Uint8ClampedArray(imageData.data);
 
         (function _draw(){
@@ -48,7 +48,7 @@
             return colorTable;
           })();
 
-          for (var iy = 0, offsetY = 0; iy < heigth; iy++, offsetY += 4 * width) {
+          for (var iy = 0, offsetY = 0; iy < height; iy++, offsetY += 4 * width) {
             for (var ix = 0, offsetX = 0; ix < width; ix++, offsetX += 4) {
               var headIndex = offsetY + offsetX;
               var rIndex = headIndex + 0;
