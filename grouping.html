@@ -4,7 +4,9 @@
   <title>Canvas Test</title>
 </head>
 <body>
-  <canvas id="canvas"></canvas>
+  <div>
+    <canvas id="canvas"></canvas>
+  </div>
 
   <script src="js/utils.js"></script>
   <script>
@@ -64,7 +66,7 @@
         })();
       };
       image.style.verticalAlign = "top";
-      image.style.marginRight = "32px";
+      image.style.margin = "1px";
       document.body.insertBefore(image, canvas);
     };
 
