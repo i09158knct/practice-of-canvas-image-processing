@@ -30,7 +30,7 @@
         var group = buildGroup(baseImageData);
         colorizeImageDataPerGroup(baseImageData, group);
         context.putImageData(baseImageData, 0, 0);
-        var splitedImages = splitImageDataIntoGroups(baseImageData, group);
+        var splitedImages = splitImageDataEachGroups(baseImageData, group);
 
         var elSplitedImagesContainer =
           document.getElementById("splited-images-container");

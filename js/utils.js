@@ -178,7 +178,7 @@ function buildGroup(imageData) {
   };
 }
 
-function splitImageDataIntoGroups(imageData, group) {
+function splitImageDataEachGroups(imageData, group) {
   var groupTable = group.groupTable;
   var numberOfGroups = group.numberOfGroups;
   var width = imageData.width;

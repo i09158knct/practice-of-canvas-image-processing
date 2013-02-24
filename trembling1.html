@@ -32,7 +32,7 @@
         var group = buildGroup(baseImageData);
         colorizeImageDataPerGroup(baseImageData, group)
         context.putImageData(baseImageData, 0, 0)
-         splitedImages = splitImageDataIntoGroups(baseImageData, group);
+         splitedImages = splitImageDataEachGroups(baseImageData, group);
 
         var elTremble = document.getElementById("tremble");
         elTremble.onclick = function() {
@@ -43,7 +43,7 @@
     };
 
     function drawTremblingImageData(context, imageData, splitedImages) {
-      splitedImages.forEach(function _appendPartialImageCanvas(container) {
+      splitedImages.forEach(function _putPartialImage(container) {
         context.putImageData(
           container.imageData,
           container.left + Math.random() * 10 - 5,
