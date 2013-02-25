@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>proto</title>
+  <style>
+    td {
+      border: solid;
+    }
+    #populations canvas {
+      width: 128px;
+    }
+    .selected {
+      background-color: #bbffbb;
+    }
+  </style>
+  <!-- <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script> -->
+  <script src="js/jquery-1.9.1.min.js"></script>
+  <script>
+    (function simplePubSub($) {
+
+      var o = $({});
+
+      $.subscribe = function() {
+        o.on.apply(o, arguments);
+      };
+
+      $.unsubscribe = function() {
+        o.off.apply(o, arguments);
+      };
+
+      $.publish = function() {
+        o.trigger.apply(o, arguments);
+      };
+
+    }(jQuery));
+  </script>
+  <script src="js/utils.js"></script>
+</head>
+<body>
+
+
+  <div id="step1" class="step">
+    <h1>Image Uploading</h1>
+    <form>
+      <label for="base-image">Base Image:</label>
+      <input type="file" id="base-image">
+      <button id="execute">Start</button>
+    </form>
+    <script>
+      $(function() {
+        $("#execute").on("click", function(event) {
+          event.preventDefault();
+          var image = $("#base-image")[0].files[0];
+          $.publish("step1-done", [image]);
+        });
+      });
+    </script>
+  </div>
+
+
+  <div id="step2" class="step">
+    <h1>Base Image</h1>
+    <canvas id="base-canvas"></canvas>
+    <script>
+      $.subscribe("step1-done", function(event, image) {
+        try {
+          var URL = window.URL || window.webkitURL;
+          var url = URL.createObjectURL(image);
+        } catch (exception) {
+          alert('Your Browser is not suport "window.URL.createObjectURL"!\n\nI recommend use Google Chrome.')
+        }
+
+        var elBaseCanvas = $("#base-canvas")[0];
+        var baseContext = elBaseCanvas.getContext("2d");
+        var elBaseImage = new Image();
+        elBaseImage.src = url;
+        elBaseImage.onload = function() {
+          var width = elBaseImage.width;
+          var height = elBaseImage.height;
+
+          (function _resizeImage() {
+            if (width > 128) {
+              var scale = width / 128;
+              width = Math.floor(width / scale);
+              height = Math.floor(height / scale);
+            }
+          })();
+
+          elBaseCanvas.width = width;
+          elBaseCanvas.height = height;
+          baseContext.drawImage(elBaseImage, 0, 0, width, height);
+          $.publish("step2-done", [elBaseCanvas, baseContext, elBaseImage]);
+        };
+      });
+    </script>
+  </div>
+
+
+  <div id="step3" class="step">
+    <h1>Binarization and Grouping</h1>
+    <canvas id="binary-canvas"></canvas>
+    <canvas id="grouping-canvas"></canvas>
+    <form>
+      <input id="lower-threshold" type="range" min="0" max="255" value="0">
+      <br>
+      <input id="upper-threshold" type="range" min="0" max="255" value="255">
+      <button id="binarization-ok">Confirm</button>
+      <input type="checkbox" id="auto-confirm" checked>
+      <label for="auto-confirm">Auto confirm</label>
+      <br>
+      <button id="reset-color-table">Reset color table</button>
+    </form>
+    <form>
+      <button id="grouping-ok">OK</button>
+    </form>
+
+    <script>
+      $.subscribe("step2-done", function(event, elBaseCanvas, baseContext, elBaseImage) {
+        var elBinaryCanvas = $("#binary-canvas")[0];
+        var binaryContext = elBinaryCanvas.getContext("2d");
+        var width = elBaseCanvas.width;
+        var height = elBaseCanvas.height;
+        elBinaryCanvas.width = width;
+        elBinaryCanvas.height = height;
+        binaryContext.drawImage(elBaseImage, 0, 0, width, height);
+
+
+        var imageData = binaryContext.getImageData(0, 0, width, height);
+        var initialData = new Uint8ClampedArray(imageData.data);
+        var $lowerThreshold = $("#lower-threshold");
+        var $upperThreshold = $("#upper-threshold");
+        var $autoConfirm = $("#auto-confirm");
+        var $resetColorTable = $("#reset-color-table");
+        var colorTable = generateColorTable(500);
+
+        var binarizationCallback = function() {
+          var lowerThreshold = +$lowerThreshold.val();
+          var upperThreshold = +$upperThreshold.val();
+          var data = imageData.data;
+          for (var i = 0, length = 4 * width * height; i < length; i += 4) {
+            var rIndex = i + 0;
+            var gIndex = i + 1;
+            var bIndex = i + 2;
+            var aIndex = i + 3;
+
+            var ntscAverage = (
+              305 * initialData[rIndex] +
+              601 * initialData[gIndex] +
+              117 * initialData[bIndex]
+            ) >> 10;
+
+            var pixelValue = 0;
+            if (ntscAverage >= lowerThreshold &&
+                ntscAverage <= upperThreshold) {
+              pixelValue =  255;
+            }
+
+            data[rIndex] = pixelValue;
+            data[gIndex] = pixelValue;
+            data[bIndex] = pixelValue;
+          }
+
+          binaryContext.putImageData(imageData, 0, 0);
+          if ($autoConfirm.prop("checked")) grouping(colorTable);
+        };
+
+        $lowerThreshold.off("change");
+        $lowerThreshold.on("change", binarizationCallback);
+        $upperThreshold.off("change");
+        $upperThreshold.on("change", binarizationCallback);
+        $("#binarization-ok").off("click");
+        $("#binarization-ok").on("click", function(event) {
+          event.preventDefault();
+          grouping(colorTable);
+        });
+
+        $resetColorTable.off("click");
+        $resetColorTable.on("click", function(event) {
+          event.preventDefault();
+          colorTable = generateColorTable(500);
+          grouping(colorTable);
+        })
+
+        $("#grouping-ok").off("click");
+        $("#grouping-ok").on("click", function(event) {
+          event.preventDefault();
+          var imageData = binaryContext.getImageData(0, 0, width, height);
+          var group = buildGroup(imageData);
+          $.publish("step3-done", [elBinaryCanvas, binaryContext, group, colorTable]);
+        });
+
+        function generateColorTable(numberOfGroups) {
+          var colorTable = [];
+          for (var groupId = 1; groupId <= numberOfGroups; groupId++) {
+            colorTable[groupId] = {
+              r: Math.floor(Math.random() * 256),
+              g: Math.floor(Math.random() * 256),
+              b: Math.floor(Math.random() * 256)
+            };
+          }
+          return colorTable;
+        }
+
+        function grouping(colorTable) {
+          var width = elBinaryCanvas.width;
+          var height = elBinaryCanvas.height;
+          var elGroupingCanvas = $("#grouping-canvas")[0];
+          var groupingContext = elGroupingCanvas.getContext("2d");
+          elGroupingCanvas.width = width;
+          elGroupingCanvas.height = height;
+
+          (function _showGroups() {
+            var imageData = binaryContext.getImageData(0, 0, width, height);
+
+            var data = imageData.data;
+            var group = buildGroup(imageData);
+            var groupTable = group.groupTable;
+            var numberOfGroups = group.numberOfGroups;
+
+            for (var iy = 0, offsetY = 0; iy < height; iy++, offsetY += 4 * width) {
+              for (var ix = 0, offsetX = 0; ix < width; ix++, offsetX += 4) {
+                var headIndex = offsetY + offsetX;
+                var rIndex = headIndex + 0;
+                var gIndex = headIndex + 1;
+                var bIndex = headIndex + 2;
+                var aIndex = headIndex + 3;
+
+                var groupId = groupTable[iy][ix];
+                var colors = colorTable[groupId] || {};
+
+                data[rIndex] = colors.r || 255;
+                data[gIndex] = colors.g || 255;
+                data[bIndex] = colors.b || 255;
+              }
+            }
+
+            groupingContext.putImageData(imageData, 0, 0);
+          })();
+        }
+      });
+    </script>
+  </div>
+
+
+  <div id="step4" class="step">
+    <h1>Splitting</h1>
+    <div id="parts-of-image"></div>
+    <script>
+      $.subscribe("step3-done", function(event, elBinaryCanvas, binaryContext, group, colorTable) {
+        var width = elBinaryCanvas.width;
+        var height = elBinaryCanvas.height;
+        var binaryImageData = binaryContext.getImageData(0, 0, width, height);
+        var group = buildGroup(binaryImageData);
+        var splitedImages = splitImageDataEachGroups(binaryImageData, group);
+
+        var $partsOfImage = $("#parts-of-image");
+        $partsOfImage.empty()
+
+        splitedImages.forEach(function _appendPartialImageCanvas(container) {
+          var canvas = document.createElement("canvas");
+          canvas.width = container.width;
+          canvas.height = container.height;
+          canvas.style.margin = "1px";
+          var context = canvas.getContext("2d");
+          context.putImageData(container.imageData, 0, 0);
+          $partsOfImage.append(canvas);
+        });
+        $.publish("step4-done", [elBinaryCanvas, binaryContext, splitedImages]);
+      });
+    </script>
+  </div>
+
+
+  <div id="step5" class="step">
+    <h1>Creation of Initial Populations</h1>
+    <div id="initial-populations"></div>
+    <form>
+      <label for="init-amplitude">Amplitude:</label>
+      <input type="number" id="init-amplitude" value="5">
+      <button id="init-generate">Regenerate</button>
+    </form>
+    <button id="init-ok">OK</button>
+    <script>
+      (function _defineGA() {
+        var ga = window.GeneticAlgorithm = {};
+        ga.Model = function(splitedImages) {
+          this.splitedImages = splitedImages;
+        };
+
+        ga.Model.prototype.outputToCanvas = function(canvas) {
+          var context = canvas.getContext("2d");
+          this.splitedImages.forEach(function _putPartialImageData(container) {
+            context.putImageData(
+              container.imageData,
+              container.left,
+              container.top
+            );
+          });
+        };
+
+        ga.mutate = function(pop, amplitude, prob) {
+          if (typeof prob !== "number") prob = 0.5;
+          if (typeof amplitude !== "number") amplitude = 5;
+          var half = Math.floor(amplitude / 2)
+          var clone = ga.buildClone(pop);
+          clone.splitedImages.forEach(function(container) {
+            if (Math.random() < prob) {
+              var rand1 = Math.floor(Math.random() * amplitude) - half;
+              var rand2 = Math.floor(Math.random() * amplitude) - half;
+              container.top += rand1;
+              container.bottom += rand1;
+              container.left += rand2;
+              container.right += rand2;
+            }
+          });
+          return clone;
+        };
+
+        ga.crossover = function(pop1, pop2) {
+          var clone1 = ga.buildClone(pop1);
+          var clone2 = ga.buildClone(pop2);
+          clone1.splitedImages.forEach(function(container, i, splitedImages) {
+            if (Math.random() > 0.5) {
+              splitedImages[i] = clone2.splitedImages[i];
+            }
+          });
+          return clone1;
+        };
+
+        ga.buildClone = function(pop) {
+          var splitedImages = pop.splitedImages;
+          var imageDataBuilder =
+            document.createElement("canvas").getContext("2d");
+
+          var cloneOfSplitedImages = splitedImages.map(function(container) {
+            var sourceImageData = container.imageData;
+            var imageData = imageDataBuilder.createImageData(sourceImageData);
+
+            var clone = {
+              top: container.top,
+              bottom: container.bottom,
+              left: container.left,
+              right: container.right,
+              width: container.width,
+              height: container.height,
+              imageData: imageData
+            };
+
+            var data = imageData.data;
+            var sourceData = sourceImageData.data;
+            for (var i = 0, length = 4 * imageData.width * imageData.height;
+                 i < length;
+                 i++) {
+              data[i] = sourceData[i];
+            }
+
+            return clone;
+          });
+
+          return new ga.Model(cloneOfSplitedImages);
+        };
+
+      })();
+    </script>
+    <script>
+      $.subscribe("step4-done", function(event, elBinaryCanvas, binaryContext, splitedImages) {
+        var width = elBinaryCanvas.width;
+        var height = elBinaryCanvas.height;
+
+        var $generate = $("#init-generate");
+        $generate.off("click");
+        $generate.on("click", function(event) {
+          event.preventDefault();
+          var $initialPopulations = $("#initial-populations");
+          $initialPopulations.empty();
+
+          var numberOfInitialPoplations = 9
+          var amplitude = +$("#init-amplitude").val();
+          var seed = new GeneticAlgorithm.Model(splitedImages);
+          var populations = [];
+          populations[0] = seed;
+          for (var i = 1; i < numberOfInitialPoplations; i++) {
+            populations[i] = GeneticAlgorithm.mutate(seed, amplitude);
+          }
+
+          for (var i = 0; i < numberOfInitialPoplations; i++) {
+            var canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            $initialPopulations.append(canvas);
+            populations[i].outputToCanvas(canvas);
+          }
+
+          var $ok = $("#init-ok");
+          $ok.off("click");
+          $ok.on("click", function(event) {
+            event.preventDefault();
+            $.publish("step5-done", [populations, width, height]);
+          });
+        });
+
+        $generate.click();
+
+      });
+
+    </script>
+  </div>
+
+
+  <div id="step6" class="step">
+    <h1>Loop...</h1>
+    <div id="populations">
+      <table>
+        <tr>
+          <td>
+            <canvas data-id="0"></canvas>
+            <br><button class="imaging">Convert to image</button>
+          </td>
+          <td>
+            <canvas data-id="1"></canvas>
+            <br><button class="imaging">Convert to image</button>
+          </td>
+          <td>
+            <canvas data-id="2"></canvas>
+            <br><button class="imaging">Convert to image</button>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <canvas data-id="3"></canvas>
+            <br><button class="imaging">Convert to image</button>
+          </td>
+          <td>
+            <canvas data-id="4"></canvas>
+            <br><button class="imaging">Convert to image</button>
+          </td>
+          <td>
+            <canvas data-id="5"></canvas>
+            <br><button class="imaging">Convert to image</button>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <canvas data-id="6"></canvas>
+            <br><button class="imaging">Convert to image</button>
+          </td>
+          <td>
+            <canvas data-id="7"></canvas>
+            <br><button class="imaging">Convert to image</button>
+          </td>
+          <td>
+            <canvas data-id="8"></canvas>
+            <br><button class="imaging">Convert to image</button>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <form>
+      <label for="amplitude">Amplitude:</label>
+      <input type="number" id="amplitude" value="5">
+      <button id="regenerate">Regenerate</button>
+    </form>
+    <div id="converted-images"></div>
+    <script>
+      $.subscribe("step5-done", function(event, populations, width, height) {
+        var selectedPopulations = [];
+        var storedPopulations = populations.slice(0, 3);
+        var $populations = $("#populations");
+        var $canvases = $populations.find("canvas");
+        adaptModelsToCanvas(populations, $canvases);
+
+        var $amplitude = $("#amplitude");
+        var $regenerate = $("#regenerate");
+        var $imaging = $(".imaging");
+        var $convertedImages = $("#converted-images");
+        $populations.off("click", "canvas");
+        $populations.on("click", "canvas", function(event) {
+          var $target = $(this);
+          $target.addClass("selected");
+          var id = +$target.attr("data-id");
+          selectedPopulations.push(populations[id]);
+          if (selectedPopulations.length >= 3) {
+            promote();
+          }
+        });
+
+        $regenerate.off("click");
+        $regenerate.on("click", function(event) {
+          event.preventDefault();
+          regenerate();
+        });
+
+        $imaging.off("click");
+        $imaging.on("click", function(event) {
+          event.preventDefault();
+          var canvas = $(this).parent().find("canvas")[0];
+          var image = document.createElement("img");
+          image.src = canvas.toDataURL();
+          $convertedImages.append(image);
+        });
+
+        function promote() {
+          populations = generateNextGeneration(selectedPopulations);
+          adaptModelsToCanvas(populations, $canvases);
+          storedPopulations = selectedPopulations;
+          selectedPopulations = [];
+          $canvases.removeClass("selected");
+        }
+
+        function regenerate() {
+          populations = generateNextGeneration(storedPopulations);
+          adaptModelsToCanvas(populations, $canvases);
+          selectedPopulations = [];
+          $canvases.removeClass("selected");
+        }
+
+        function generateNextGeneration(selectedPopulations) {
+          var populations = selectedPopulations.slice();
+          for (var i = populations.length; i < 9; i++) {
+            if (Math.random() < 0.5) {
+              var randomIndex =
+                Math.floor(Math.random() * selectedPopulations.length);
+              var randomPop = selectedPopulations[randomIndex];
+              populations[i] =
+                GeneticAlgorithm.mutate(randomPop, +$amplitude.val());
+            } else {
+              var randomIndex1 =
+                Math.floor(Math.random() * selectedPopulations.length);
+              var randomIndex2 =
+                Math.floor(Math.random() * selectedPopulations.length);
+              while (randomIndex1 === randomIndex2) {
+                randomIndex2 =
+                  Math.floor(Math.random() * selectedPopulations.length);
+              }
+
+              var randomPop1 = selectedPopulations[randomIndex1];
+              var randomPop2 = selectedPopulations[randomIndex2];
+
+              populations[i] =
+                GeneticAlgorithm.crossover(randomPop1, randomPop2);
+            }
+          }
+          return populations;
+        }
+
+        function adaptModelsToCanvas(populations, $canvases) {
+          for (var i = 0, length = $canvases.length; i < length; i++) {
+            var canvas = $canvases[i];
+            canvas.width = width;
+            canvas.height = height;
+            canvas.style.width = width;
+            canvas.style.height = height;
+            var pop = populations[i];
+            pop.outputToCanvas(canvas);
+          }
+        }
+
+      });
+    </script>
+  </div>
+</body>
+</html>
