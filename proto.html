@@ -7,7 +7,6 @@
       border: solid;
     }
     #populations canvas {
-      width: 128px;
     }
     .selected {
       background-color: #bbffbb;
@@ -44,6 +43,10 @@
     <form>
       <label for="base-image">Base Image:</label>
       <input type="file" id="base-image">
+      <br>
+      <label for="base-image">Max Width:</label>
+      <input type="number" id="max-width" value="128">
+      <br>
       <button id="execute">Start</button>
     </form>
     <script>
@@ -69,7 +72,7 @@
         } catch (exception) {
           alert('Your Browser is not suport "window.URL.createObjectURL"!\n\nI recommend use Google Chrome.')
         }
-
+        var maxWidth = +$("#max-width").val();
         var elBaseCanvas = $("#base-canvas")[0];
         var baseContext = elBaseCanvas.getContext("2d");
         var elBaseImage = new Image();
@@ -79,8 +82,8 @@
           var height = elBaseImage.height;
 
           (function _resizeImage() {
-            if (width > 128) {
-              var scale = width / 128;
+            if (width > maxWidth) {
+              var scale = width / maxWidth;
               width = Math.floor(width / scale);
               height = Math.floor(height / scale);
             }
